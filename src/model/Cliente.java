@@ -3,34 +3,56 @@ package model;
 import java.util.ArrayList;
 
 public class Cliente {
-    private String idUnico;
-    private String tipoIdentificacion;
+    private String nombre;
+    private String id;
     private String correo;
     private String direccion;
     private ArrayList<Registrador> registradores;
 
-    public Cliente(String idUnico, String tipoIdentificacion, String correo, String direccion) {
-        this.idUnico = idUnico;
-        this.tipoIdentificacion = tipoIdentificacion;
+    public Cliente(String nombre, String id, String correo, String direccion) {
+        this.nombre = nombre;
+        this.id = id;
         this.correo = correo;
         this.direccion = direccion;
         this.registradores = new ArrayList<>();
     }
 
-    // Métodos Getters y Setters
-    public String getIdUnico() { return idUnico; }
-    public String getTipoIdentificacion() { return tipoIdentificacion; }
-    public void setTipoIdentificacion(String tipoIdentificacion) { this.tipoIdentificacion = tipoIdentificacion; }
+    public String getNombre() {
+        return nombre;
+    }
 
-    public String getCorreo() { return correo; }
-    public void setCorreo(String correo) { this.correo = correo; }
+    public String getId() {
+        return id;
+    }
 
-    public String getDireccion() { return direccion; }
-    public void setDireccion(String direccion) { this.direccion = direccion; }
+    public String getCorreo() {
+        return correo;
+    }
 
-    public ArrayList<Registrador> getRegistradores() { return registradores; }
+    public String getDireccion() {
+        return direccion;
+    }
 
-    public void agregarRegistrador(Registrador r) {
+    public ArrayList<Registrador> getRegistradores() {
+        return registradores;
+    }
+
+    public boolean agregarRegistrador(Registrador r) {
+        for (Registrador reg : registradores) {
+            if (reg.getId().equals(r.getId())) {
+                return false;
+            }
+        }
         registradores.add(r);
+        return true;
+    }
+
+    public Registrador getRegistrador(String idRegistrador) {
+        for (Registrador r : registradores) {
+            if (r.getId().equals(idRegistrador)) {
+                return r;
+            }
+        }
+        return null;
     }
 }

@@ -1,76 +1,79 @@
-package view;
-
-import controller.Controlador;
-
-import java.util.*;
+import java.util.Map;
+import java.util.Scanner;
 
 public class Vista {
-    private Scanner sc;
-    private Controlador controlador;
 
-    public Vista() {
-        sc = new Scanner(System.in);
-        controlador = new Controlador();
+    private final Scanner sc;
+    private final Controlador controlador;
+
+    public Vista(Controlador controlador) {
+        this.sc = new Scanner(System.in);
+        this.controlador = controlador;
     }
 
-    public void iniciar() {
+    public void menu() {
         int opcion;
         do {
-            mostrarMenu();
+            System.out.println("\n--- MENÚ PRINCIPAL ---");
+            System.out.println("1. Crear cliente");
+            System.out.println("2. Mostrar clientes");
+            System.out.println("3. Editar cliente");
+            System.out.println("4. Crear registrador");
+            System.out.println("5. Editar registrador");
+            System.out.println("6. Cargar consumos a todos los clientes");
+            System.out.println("7. Cargar consumo a cliente");
+            System.out.println("8. Cambiar consumo de una hora específica");
+            System.out.println("9. Generar factura");
+            System.out.println("10. Mostrar consumo mínimo");
+            System.out.println("11. Mostrar consumo máximo");
+            System.out.println("12. Mostrar consumo por franjas");
+            System.out.println("13. Mostrar consumo por días");
+            System.out.println("14. Calcular valor total de la factura");
+            System.out.println("0. Salir");
+            System.out.print("Seleccione una opción: ");
             opcion = Integer.parseInt(sc.nextLine());
+
             switch (opcion) {
                 case 1 -> crearCliente();
-                case 2 -> editarCliente();
-                case 3 -> crearRegistrador();
-                case 4 -> editarRegistrador();
-                case 5 -> cargarConsumosTodos();
-                case 6 -> cargarConsumoCliente();
-                case 7 -> cambiarConsumoHora();
-                case 8 -> generarFactura();
-                case 9 -> mostrarConsumoMinimo();
-                case 10 -> mostrarConsumoMaximo();
-                case 11 -> mostrarConsumoPorFranjas();
-                case 12 -> mostrarConsumoPorDias();
-                case 13 -> calcularValorFactura();
-                case 0 -> System.out.println("Saliendo del programa...");
-                default -> System.out.println("Opción inválida.");
+                case 2 -> mostrarClientes();
+                case 3 -> editarCliente();
+                case 4 -> crearRegistrador();
+                case 5 -> editarRegistrador();
+                case 6 -> cargarConsumosTodos();
+                case 7 -> cargarConsumoCliente();
+                case 8 -> cambiarConsumoHora();
+                case 9 -> generarFactura();
+                case 10 -> mostrarConsumoMinimo();
+                case 11 -> mostrarConsumoMaximo();
+                case 12 -> mostrarConsumoPorFranjas();
+                case 13 -> mostrarConsumoPorDias();
+                case 14 -> calcularValorFactura();
+                case 0 -> System.out.println("¡Hasta luego!");
+                default -> System.out.println("Opción inválida. Intente de nuevo.");
             }
         } while (opcion != 0);
     }
 
-    private void mostrarMenu() {
-        System.out.println("""
-                \n--- MENÚ PRINCIPAL ---
-                1. Crear cliente
-                2. Editar cliente
-                3. Crear registrador
-                4. Editar registrador
-                5. Cargar consumos automáticamente (todos los clientes)
-                6. Cargar consumo automáticamente (cliente)
-                7. Cambiar consumo puntual
-                8. Generar factura (simulada)
-                9. Mostrar consumo mínimo
-                10. Mostrar consumo máximo
-                11. Mostrar consumo por franjas
-                12. Mostrar consumo por días
-                13. Calcular valor total de factura
-                0. Salir
-                -------------------------
-                Ingrese una opción:
-                """);
-    }
-
     private void crearCliente() {
-        System.out.print("ID único del cliente: ");
+        System.out.print("Nombre del cliente: ");
+        String nombre = sc.nextLine();
+        System.out.print("ID del cliente: ");
         String id = sc.nextLine();
         System.out.print("Tipo de identificación: ");
         String tipo = sc.nextLine();
-        System.out.print("Correo electrónico: ");
+        System.out.print("Correo: ");
         String correo = sc.nextLine();
-        System.out.print("Dirección física: ");
+        System.out.print("Dirección: ");
         String direccion = sc.nextLine();
-        controlador.crearCliente(id, tipo, correo, direccion);
+
+        controlador.crearCliente(nombre, id, tipo, correo, direccion);
         System.out.println("Cliente creado exitosamente.");
+    }
+
+    private void mostrarClientes() {
+        String listado = controlador.mostrarClientes();
+        System.out.println("--- CLIENTES REGISTRADOS ---");
+        System.out.println(listado);
     }
 
     private void editarCliente() {
@@ -83,7 +86,7 @@ public class Vista {
         System.out.print("Nueva dirección: ");
         String dir = sc.nextLine();
         if (controlador.editarCliente(id, tipo, correo, dir)) {
-            System.out.println("Cliente editado correctamente.");
+            System.out.println("Cliente editado exitosamente.");
         } else {
             System.out.println("Cliente no encontrado.");
         }
@@ -99,7 +102,7 @@ public class Vista {
         System.out.print("Ciudad del registrador: ");
         String ciudad = sc.nextLine();
         if (controlador.crearRegistrador(idCliente, idReg, direccion, ciudad)) {
-            System.out.println("Registrador creado correctamente.");
+            System.out.println("Registrador agregado correctamente.");
         } else {
             System.out.println("Cliente no encontrado.");
         }
@@ -108,7 +111,7 @@ public class Vista {
     private void editarRegistrador() {
         System.out.print("ID del cliente: ");
         String idCliente = sc.nextLine();
-        System.out.print("ID del registrador: ");
+        System.out.print("ID del registrador a editar: ");
         String idReg = sc.nextLine();
         System.out.print("Nueva dirección: ");
         String direccion = sc.nextLine();
@@ -117,28 +120,28 @@ public class Vista {
         if (controlador.editarRegistrador(idCliente, idReg, direccion, ciudad)) {
             System.out.println("Registrador editado correctamente.");
         } else {
-            System.out.println("Registrador o cliente no encontrado.");
+            System.out.println("Registrador no encontrado.");
         }
     }
 
     private void cargarConsumosTodos() {
-        System.out.print("Mes y año (ej. 05-2025): ");
+        System.out.print("Mes y año (ej. 2025-05): ");
         String mesAnio = sc.nextLine();
-        System.out.print("Cantidad de días del mes: ");
+        System.out.print("Número de días del mes: ");
         int dias = Integer.parseInt(sc.nextLine());
         controlador.cargarConsumosTodos(mesAnio, dias);
-        System.out.println("Consumos cargados correctamente.");
+        System.out.println("Consumos cargados para todos los clientes.");
     }
 
     private void cargarConsumoCliente() {
         System.out.print("ID del cliente: ");
         String id = sc.nextLine();
-        System.out.print("Mes y año (ej. 05-2025): ");
+        System.out.print("Mes y año (ej. 2025-05): ");
         String mesAnio = sc.nextLine();
-        System.out.print("Cantidad de días del mes: ");
+        System.out.print("Número de días del mes: ");
         int dias = Integer.parseInt(sc.nextLine());
         if (controlador.cargarConsumoCliente(id, mesAnio, dias)) {
-            System.out.println("Consumo cargado correctamente.");
+            System.out.println("Consumos cargados para el cliente.");
         } else {
             System.out.println("Cliente no encontrado.");
         }
@@ -149,75 +152,92 @@ public class Vista {
         String idCliente = sc.nextLine();
         System.out.print("ID del registrador: ");
         String idReg = sc.nextLine();
-        System.out.print("Mes y año (ej. 05-2025): ");
+        System.out.print("Mes y año (ej. 2025-05): ");
         String mesAnio = sc.nextLine();
-        System.out.print("Día (0 basado): ");
+        System.out.print("Día (0-indexado): ");
         int dia = Integer.parseInt(sc.nextLine());
-        System.out.print("Hora (0-23): ");
+        System.out.print("Hora (0 a 23): ");
         int hora = Integer.parseInt(sc.nextLine());
-        System.out.print("Nuevo consumo (kWh): ");
-        double nuevoConsumo = Double.parseDouble(sc.nextLine());
-        if (controlador.cambiarConsumoHora(idCliente, idReg, mesAnio, dia, hora, nuevoConsumo)) {
-            System.out.println("Consumo actualizado correctamente.");
+        System.out.print("Nuevo valor de consumo (kWh): ");
+        double consumo = Double.parseDouble(sc.nextLine());
+
+        if (controlador.cambiarConsumoHora(idCliente, idReg, mesAnio, dia, hora, consumo)) {
+            System.out.println("Consumo modificado correctamente.");
         } else {
-            System.out.println("Error: cliente o registrador no encontrado.");
+            System.out.println("Error: cliente, registrador o mes no encontrado.");
         }
     }
 
     private void generarFactura() {
         System.out.print("ID del cliente: ");
         String id = sc.nextLine();
-        System.out.print("Mes y año (ej. 05-2025): ");
-        String mes = sc.nextLine();
-        if (!controlador.generarFactura(id, mes)) {
-            System.out.println("Error al generar factura.");
+        System.out.print("Mes y año (ej. 2025-05): ");
+        String mesAnio = sc.nextLine();
+        if (!controlador.generarFactura(id, mesAnio)) {
+            System.out.println("No se pudo generar la factura. Cliente no encontrado.");
         }
     }
 
     private void mostrarConsumoMinimo() {
         System.out.print("ID del cliente: ");
         String id = sc.nextLine();
-        System.out.print("Mes y año: ");
+        System.out.print("Mes y año (ej. 2025-05): ");
         String mes = sc.nextLine();
         double min = controlador.consumoMinimo(id, mes);
-        System.out.println("Consumo mínimo: " + min + " kWh");
+        if (min == Double.MAX_VALUE) {
+            System.out.println("No hay datos disponibles.");
+        } else {
+            System.out.println("Consumo mínimo: " + min + " kWh");
+        }
     }
 
     private void mostrarConsumoMaximo() {
         System.out.print("ID del cliente: ");
         String id = sc.nextLine();
-        System.out.print("Mes y año: ");
+        System.out.print("Mes y año (ej. 2025-05): ");
         String mes = sc.nextLine();
         double max = controlador.consumoMaximo(id, mes);
-        System.out.println("Consumo máximo: " + max + " kWh");
+        if (max == Double.MIN_VALUE) {
+            System.out.println("No hay datos disponibles.");
+        } else {
+            System.out.println("Consumo máximo: " + max + " kWh");
+        }
     }
 
     private void mostrarConsumoPorFranjas() {
         System.out.print("ID del cliente: ");
         String id = sc.nextLine();
-        System.out.print("Mes y año: ");
+        System.out.print("Mes y año (ej. 2025-05): ");
         String mes = sc.nextLine();
         Map<String, Double> franjas = controlador.consumoPorFranjas(id, mes);
-        franjas.forEach((franja, valor) -> System.out.println(franja + ": " + valor + " kWh"));
+        System.out.println("--- Consumo por franjas ---");
+        for (Map.Entry<String, Double> entry : franjas.entrySet()) {
+            System.out.println(entry.getKey() + ": " + entry.getValue() + " kWh");
+        }
     }
 
     private void mostrarConsumoPorDias() {
         System.out.print("ID del cliente: ");
         String id = sc.nextLine();
-        System.out.print("Mes y año: ");
+        System.out.print("Mes y año (ej. 2025-05): ");
         String mes = sc.nextLine();
-        double[] dias = controlador.consumoPorDias(id, mes);
-        for (int i = 0; i < dias.length; i++) {
-            System.out.printf("Día %d: %.2f kWh\n", i + 1, dias[i]);
+        double[] consumos = controlador.consumoPorDias(id, mes);
+        if (consumos.length == 0) {
+            System.out.println("No hay datos para mostrar.");
+        } else {
+            System.out.println("--- Consumo diario ---");
+            for (int i = 0; i < consumos.length; i++) {
+                System.out.println("Día " + (i + 1) + ": " + consumos[i] + " kWh");
+            }
         }
     }
 
     private void calcularValorFactura() {
         System.out.print("ID del cliente: ");
         String id = sc.nextLine();
-        System.out.print("Mes y año: ");
+        System.out.print("Mes y año (ej. 2025-05): ");
         String mes = sc.nextLine();
         double total = controlador.calcularFacturaCliente(id, mes);
-        System.out.println("Total a pagar: " + total + " COP");
+        System.out.println("Valor total a pagar: " + total + " COP");
     }
 }
