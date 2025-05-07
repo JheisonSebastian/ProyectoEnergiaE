@@ -1,12 +1,9 @@
 package controller;
 
+import model.Factura;
 import model.Cliente;
 import model.Registrador;
 
-import com.lowagie.text.*;
-import com.lowagie.text.pdf.*;
-
-import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -82,42 +79,19 @@ public class Controlador {
         return cliente.getRegistradores();
     }
 
-    // 9. Generar factura en PDF
-    public boolean generarFactura(String idCliente, String mesAnio) {
+    // 9. Generar factura usando la clase Factura
+    public boolean generarFacturaPDF(String idCliente, String idRegistrador, String mesAnio) {
         Cliente cliente = clientes.get(idCliente);
         if (cliente == null) return false;
 
-        double total = calcularFacturaCliente(idCliente, mesAnio);
+        Registrador registrador = cliente.getRegistrador(idRegistrador);
+        if (registrador == null) return false;
 
-        try {
-            Document documento = new Document();
-            PdfWriter.getInstance(documento, new FileOutputStream("Factura_" + idCliente + "_" + mesAnio + ".pdf"));
-            documento.open();
+        double consumoTotal = registrador.consumoTotal(mesAnio);
 
-            documento.add(new Paragraph("FACTURA DE CONSUMO ENERGÉTICO", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18)));
-            documento.add(new Paragraph(" "));
-            documento.add(new Paragraph("Cliente: " + cliente.getNombre()));
-            documento.add(new Paragraph("ID: " + cliente.getId()));
-            documento.add(new Paragraph("Correo: " + cliente.getCorreo()));
-            documento.add(new Paragraph("Dirección: " + cliente.getDireccion()));
-            documento.add(new Paragraph("Mes facturado: " + mesAnio));
-            documento.add(new Paragraph(" "));
+        Factura factura = new Factura(idCliente, cliente.getNombre(), mesAnio, consumoTotal);
 
-            documento.add(new Paragraph("Detalle de consumo por registrador:"));
-
-            for (Registrador reg : cliente.getRegistradores()) {
-                double totalReg = reg.consumoTotal(mesAnio);
-                documento.add(new Paragraph("- Registrador " + reg.getId() + " (" + reg.getDireccion() + ", " + reg.getCiudad() + "): " + totalReg + " kWh"));
-            }
-
-            documento.add(new Paragraph(" "));
-            documento.add(new Paragraph("Total a pagar: " + total + " COP", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14)));
-            documento.close();
-            return true;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
+        String nombreArchivo = "Factura_" + idCliente + "_" + idRegistrador + "_" + mesAnio + ".pdf";
+        return factura.generarPDF(nombreArchivo);
     }
 }
