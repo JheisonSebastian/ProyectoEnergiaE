@@ -13,7 +13,7 @@ public class Factura {
     private String nombreCliente;
     private String mesAnio;
     private double consumoTotal;
-    private double tarifaPorKwh = 200; // Puedes hacer que esto sea configurable si quieres
+    private double tarifaPorKwh = 200; // Este apartado se puede configurar
 
     public Factura(String idCliente, String nombreCliente, String mesAnio, double consumoTotal) {
         this.idCliente = idCliente;
@@ -48,7 +48,7 @@ public class Factura {
         }
     }
 
-    // Getters y setters (opcionales si los necesitas)
+    // Getters y setters 
     public String getIdCliente() {
         return idCliente;
     }

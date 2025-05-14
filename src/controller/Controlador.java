@@ -94,4 +94,32 @@ public class Controlador {
         String nombreArchivo = "Factura_" + idCliente + "_" + idRegistrador + "_" + mesAnio + ".pdf";
         return factura.generarPDF(nombreArchivo);
     }
+
+    //
+    public boolean crearCliente(String nombre, String id, String tipo, String correo, String direccion) {
+    return registrarCliente(nombre, id, correo, direccion); // tipo no se usa actualmente
+}
+
+public boolean editarCliente(String id, String tipo, String correo, String direccion) {
+    Cliente cliente = buscarCliente(id);
+    if (cliente == null) return false;
+    cliente.setCorreo(correo);
+    cliente.setDireccion(direccion);
+    return true;
+}
+
+public String mostrarClientes() {
+    StringBuilder sb = new StringBuilder();
+    for (Cliente c : obtenerClientes()) {
+        sb.append("Nombre: ").append(c.getNombre())
+          .append(" | ID: ").append(c.getId())
+          .append(" | Correo: ").append(c.getCorreo())
+          .append(" | Dirección: ").append(c.getDireccion())
+          .append("\n");
+    }
+    return sb.toString();
+}
+
+
+
 }
