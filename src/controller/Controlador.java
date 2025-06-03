@@ -1,125 +1,240 @@
 package controller;
 
-import model.Factura;
 import model.Cliente;
 import model.Registrador;
+import model.Consumo;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.List;
 
 public class Controlador {
-    private Map<String, Cliente> clientes = new HashMap<>();
+    private List<Cliente> clientes;
 
-    // 1. Registrar cliente
-    public boolean registrarCliente(String nombre, String id, String correo, String direccion) {
-        if (clientes.containsKey(id)) return false;
-        clientes.put(id, new Cliente(nombre, id, correo, direccion));
-        return true;
+    public Controlador() {
+        clientes = new ArrayList<>();
     }
 
-    // 2. Registrar registrador a un cliente
-    public boolean registrarRegistrador(String idCliente, String idRegistrador, String direccion, String ciudad) {
-        Cliente cliente = clientes.get(idCliente);
-        if (cliente == null) return false;
-
-        Registrador nuevoRegistrador = new Registrador(idRegistrador, direccion, ciudad);
-        return cliente.agregarRegistrador(nuevoRegistrador);
+    // 1. Crear cliente (alias registrarCliente)
+    public boolean crearCliente(Cliente cliente) {
+        return registrarCliente(cliente);
     }
 
-    // 3. Registrar consumo horario
-    public boolean registrarConsumo(String idCliente, String idRegistrador, String mesAnio, int dia, int hora, double consumo) {
-        Cliente cliente = clientes.get(idCliente);
-        if (cliente == null) return false;
-
-        Registrador registrador = cliente.getRegistrador(idRegistrador);
-        if (registrador == null) return false;
-
-        registrador.registrarConsumo(mesAnio, dia, hora, consumo);
-        return true;
-    }
-
-    // 4. Mostrar consumos de un registrador por mes
-    public double[][] obtenerConsumosRegistrador(String idCliente, String idRegistrador, String mesAnio) {
-        Cliente cliente = clientes.get(idCliente);
-        if (cliente == null) return null;
-
-        Registrador registrador = cliente.getRegistrador(idRegistrador);
-        if (registrador == null) return null;
-
-        return registrador.getConsumos(mesAnio);
-    }
-
-    // 5. Mostrar consumo total de un cliente por mes
-    public double calcularFacturaCliente(String idCliente, String mesAnio) {
-        Cliente cliente = clientes.get(idCliente);
-        if (cliente == null) return -1;
-
-        double total = 0;
-        for (Registrador r : cliente.getRegistradores()) {
-            total += r.consumoTotal(mesAnio);
+    public boolean registrarCliente(Cliente cliente) {
+        if (buscarCliente(cliente.getId()) != null) {
+            return false;
         }
-        return total;
+        clientes.add(cliente);
+        return true;
     }
 
-    // 6. Buscar cliente por ID
-    public Cliente buscarCliente(String idCliente) {
-        return clientes.get(idCliente);
+    // 2. Editar cliente
+    public boolean editarCliente(String id, String nuevoTipoId, String nuevoCorreo, String nuevaDireccion) {
+        Cliente cliente = buscarCliente(id);
+        if (cliente != null) {
+            cliente.setTipoId(nuevoTipoId);
+            cliente.setCorreo(nuevoCorreo);
+            cliente.setDireccion(nuevaDireccion);
+            return true;
+        }
+        return false;
     }
 
-    // 7. Obtener todos los clientes
-    public ArrayList<Cliente> obtenerClientes() {
-        return new ArrayList<>(clientes.values());
+    // 3. Crear registrador (alias registrarRegistrador)
+    public boolean crearRegistrador(String idCliente, Registrador registrador) {
+        return registrarRegistrador(idCliente, registrador);
     }
 
-    // 8. Obtener registradores de un cliente
-    public ArrayList<Registrador> obtenerRegistradores(String idCliente) {
-        Cliente cliente = clientes.get(idCliente);
-        if (cliente == null) return null;
-        return cliente.getRegistradores();
+    public boolean registrarRegistrador(String idCliente, Registrador registrador) {
+        Cliente cliente = buscarCliente(idCliente);
+        if (cliente != null && cliente.getRegistradorPorId(registrador.getId()) == null) {
+            cliente.getRegistradores().add(registrador);
+            return true;
+        }
+        return false;
     }
 
-    // 9. Generar factura usando la clase Factura
-    public boolean generarFacturaPDF(String idCliente, String idRegistrador, String mesAnio) {
-        Cliente cliente = clientes.get(idCliente);
+    // 4. Editar registrador
+    public boolean editarRegistrador(String idCliente, String idRegistrador, String nuevaDireccion, String nuevaCiudad) {
+        Cliente cliente = buscarCliente(idCliente);
+        if (cliente != null) {
+            Registrador r = cliente.getRegistradorPorId(idRegistrador);
+            if (r != null) {
+                r.setDireccion(nuevaDireccion);
+                r.setCiudad(nuevaCiudad);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // 5. Cargar consumos automáticos para todos los clientes
+    public void cargarConsumosAutomaticos(int mes, int anio) {
+        for (Cliente cliente : clientes) {
+            cargarConsumoCliente(cliente.getId(), mes, anio);
+        }
+    }
+
+    // 6. Cargar consumos automáticos para un cliente
+    public boolean cargarConsumoCliente(String idCliente, int mes, int anio) {
+        Cliente cliente = buscarCliente(idCliente);
+        if (cliente != null) {
+            Random random = new Random();
+            for (Registrador r : cliente.getRegistradores()) {
+                r.getConsumos().removeIf(c -> c.getFechaHora().getMonthValue() == mes && c.getFechaHora().getYear() == anio);
+                int diasMes = LocalDateTime.of(anio, mes, 1, 0, 0).toLocalDate().lengthOfMonth();
+                for (int dia = 1; dia <= diasMes; dia++) {
+                    for (int hora = 0; hora < 24; hora++) {
+                        double kw = generarConsumoAleatorio(hora, random);
+                        LocalDateTime fechaHora = LocalDateTime.of(anio, mes, dia, hora, 0);
+                        r.agregarConsumo(new Consumo(fechaHora, kw));
+                    }
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    // 7. Cambiar consumo específico (alias cambiarConsumosManuales)
+    public boolean cambiarConsumosManuales(String idCliente, String idRegistrador, LocalDateTime fechaHora, double nuevoConsumo) {
+        return cambiarConsumo(idCliente, idRegistrador, fechaHora, nuevoConsumo);
+    }
+
+    public boolean cambiarConsumo(String idCliente, String idRegistrador, LocalDateTime fechaHora, double nuevoConsumo) {
+        Cliente cliente = buscarCliente(idCliente);
+        if (cliente != null) {
+            Registrador r = cliente.getRegistradorPorId(idRegistrador);
+            if (r != null) {
+                for (Consumo c : r.getConsumos()) {
+                    if (c.getFechaHora().equals(fechaHora)) {
+                        c.setKwHora(nuevoConsumo);
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    // 8. Buscar cliente
+    public Cliente buscarCliente(String id) {
+        for (Cliente c : clientes) {
+            if (c.getId().equals(id)) {
+                return c;
+            }
+        }
+        return null;
+    }
+
+    // 9. Obtener consumo mínimo del mes
+    public Double obtenerConsumoMinimo(String idCliente, int mes, int anio) {
+        Cliente cliente = buscarCliente(idCliente);
+        if (cliente != null) {
+            return cliente.obtenerConsumoMinimoMes(mes, anio);
+        }
+        return null;
+    }
+
+    // 10. Obtener consumo máximo del mes
+    public Double obtenerConsumoMaximo(String idCliente, int mes, int anio) {
+        Cliente cliente = buscarCliente(idCliente);
+        if (cliente != null) {
+            return cliente.obtenerConsumoMaximoMes(mes, anio);
+        }
+        return null;
+    }
+
+    // 11. Obtener consumo total del mes
+    public Double obtenerConsumoTotal(String idCliente, int mes, int anio) {
+        Cliente cliente = buscarCliente(idCliente);
+        if (cliente != null) {
+            return cliente.obtenerConsumoTotalMes(mes, anio);
+        }
+        return null;
+    }
+
+    // 12. Obtener promedio de consumo del mes
+    public Double obtenerPromedioConsumo(String idCliente, int mes, int anio) {
+        Cliente cliente = buscarCliente(idCliente);
+        if (cliente != null) {
+            return cliente.obtenerPromedioConsumoMes(mes, anio);
+        }
+        return null;
+    }
+
+    // 13. Generar factura PDF
+    public boolean generarFacturaPDF(String idCliente, int mes, int anio) {
+        Cliente cliente = buscarCliente(idCliente);
         if (cliente == null) return false;
 
-        Registrador registrador = cliente.getRegistrador(idRegistrador);
-        if (registrador == null) return false;
+        String nombreArchivo = "factura_" + idCliente + "_" + mes + "_" + anio + ".pdf";
+        try {
+            Document documento = new Document();
+            PdfWriter.getInstance(documento, new FileOutputStream(nombreArchivo));
+            documento.open();
 
-        double consumoTotal = registrador.consumoTotal(mesAnio);
+            documento.add(new Paragraph("Factura de Consumo Energético"));
+            documento.add(new Paragraph("Cliente: " + cliente.getId()));
+            documento.add(new Paragraph("Mes/Año: " + mes + "/" + anio));
+            documento.add(new Paragraph(" "));
+//
+            for (Registrador r : cliente.getRegistradores()) {
+                double totalKw = r.calcularConsumoTotal(mes, anio);
+                documento.add(new Paragraph("Registrador: " + r.getId()));
+                documento.add(new Paragraph("Dirección: " + r.getDireccion()));
+                documento.add(new Paragraph("Ciudad: " + r.getCiudad()));
+                documento.add(new Paragraph("Consumo Total: " + String.format("%.2f", totalKw) + " kWh"));
+                documento.add(new Paragraph(" "));
+            }
 
-        Factura factura = new Factura(idCliente, cliente.getNombre(), mesAnio, consumoTotal);
-
-        String nombreArchivo = "Factura_" + idCliente + "_" + idRegistrador + "_" + mesAnio + ".pdf";
-        return factura.generarPDF(nombreArchivo);
+            double total = cliente.obtenerConsumoTotalMes(mes, anio);
+            documento.add(new Paragraph("Consumo Total del Cliente: " + String.format("%.2f", total) + " kWh"));
+            documento.close();
+            return true;
+        } catch (DocumentException | IOException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
-    //
-    public boolean crearCliente(String nombre, String id, String tipo, String correo, String direccion) {
-    return registrarCliente(nombre, id, correo, direccion); // tipo no se usa actualmente
-}
-
-public boolean editarCliente(String id, String tipo, String correo, String direccion) {
-    Cliente cliente = buscarCliente(id);
-    if (cliente == null) return false;
-    cliente.setCorreo(correo);
-    cliente.setDireccion(direccion);
-    return true;
-}
-
-public String mostrarClientes() {
-    StringBuilder sb = new StringBuilder();
-    for (Cliente c : obtenerClientes()) {
-        sb.append("Nombre: ").append(c.getNombre())
-          .append(" | ID: ").append(c.getId())
-          .append(" | Correo: ").append(c.getCorreo())
-          .append(" | Dirección: ").append(c.getDireccion())
-          .append("\n");
+    // Método auxiliar para generación aleatoria de consumo
+    private double generarConsumoAleatorio(int hora, Random random) {
+        if (hora >= 0 && hora <= 6) {
+            return 100 + random.nextDouble() * 200;
+        } else if (hora >= 7 && hora <= 17) {
+            return 301 + random.nextDouble() * 299;
+        } else {
+            return 601 + random.nextDouble() * 398;
+        }
     }
-    return sb.toString();
-}
 
+    // Métodos adicionales requeridos por la Vista
+    public List<Cliente> obtenerClientes() {
+        return clientes;
+    }
 
+    public List<Registrador> obtenerRegistradores(String idCliente) {
+        Cliente cliente = buscarCliente(idCliente);
+        if (cliente != null) {
+            return cliente.getRegistradores();
+        }
+        return new ArrayList<>();
+    }
 
+    public List<Consumo> obtenerConsumosRegistrador(String idCliente, String idRegistrador) {
+        Cliente cliente = buscarCliente(idCliente);
+        if (cliente != null) {
+            Registrador r = cliente.getRegistradorPorId(idRegistrador);
+            if (r != null) {
+                return r.getConsumos();
+            }
+        }
+        return new ArrayList<>();
+    }
 }

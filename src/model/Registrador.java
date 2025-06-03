@@ -1,54 +1,108 @@
 package model;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Registrador {
-    private String id;
+    private String idRegistrador;
     private String direccion;
     private String ciudad;
-    private Map<String, double[][]> consumosPorMes; // clave: "mm-yyyy", valor: matriz [31][24]
+    private List<Consumo> consumos;
 
-    public Registrador(String id, String direccion, String ciudad) {
-        this.id = id;
+    public Registrador(String idRegistrador, String direccion, String ciudad) {
+        this.idRegistrador = idRegistrador;
         this.direccion = direccion;
         this.ciudad = ciudad;
-        this.consumosPorMes = new HashMap<>();
+        this.consumos = new ArrayList<>();
     }
 
+    // 
     public String getId() {
-        return id;
+        return idRegistrador;
     }
 
     public String getDireccion() {
         return direccion;
     }
 
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
+    }
+
     public String getCiudad() {
         return ciudad;
     }
 
-    public void registrarConsumo(String mesAnio, int dia, int hora, double consumo) {
-        double[][] matriz = consumosPorMes.get(mesAnio);
-        if (matriz == null) {
-            matriz = new double[31][24];
-            consumosPorMes.put(mesAnio, matriz);
-        }
-        matriz[dia - 1][hora] = consumo;
+    public void setCiudad(String ciudad) {
+        this.ciudad = ciudad;
     }
 
-    public double[][] getConsumos(String mesAnio) {
-        return consumosPorMes.getOrDefault(mesAnio, new double[31][24]);
+    public List<Consumo> getConsumos() {
+        return consumos;
     }
 
-    public double consumoTotal(String mesAnio) {
-        double[][] matriz = getConsumos(mesAnio);
-        double total = 0;
-        for (int i = 0; i < 31; i++) {
-            for (int j = 0; j < 24; j++) {
-                total += matriz[i][j];
+    public void agregarConsumo(Consumo c) {
+        this.consumos.add(c);
+    }
+
+    public List<Consumo> obtenerConsumosDeMes(int mes, int anio) {
+        return consumos.stream()
+                .filter(c -> c.getFechaHora().getMonthValue() == mes && c.getFechaHora().getYear() == anio)
+                .collect(Collectors.toList());
+    }
+
+    public double calcularConsumoTotal(int mes, int anio) {
+        return obtenerConsumosDeMes(mes, anio).stream()
+                .mapToDouble(Consumo::getKwHora)
+                .sum();
+    }
+
+    public Map<Integer, Double> calcularConsumoPorFranja(int mes, int anio) {
+        Map<Integer, Double> franjas = new HashMap<>();
+        franjas.put(1, 0.0);
+        franjas.put(2, 0.0);
+        franjas.put(3, 0.0);
+
+        for (Consumo c : obtenerConsumosDeMes(mes, anio)) {
+            int hora = c.getFechaHora().getHour();
+            double kw = c.getKwHora();
+
+            if (hora >= 0 && hora <= 6 && kw >= 100 && kw <= 300) {
+                franjas.put(1, franjas.get(1) + kw);
+            } else if (hora >= 7 && hora <= 17 && kw > 300 && kw <= 600) {
+                franjas.put(2, franjas.get(2) + kw);
+            } else if (hora >= 18 && hora <= 23 && kw > 600 && kw < 1000) {
+                franjas.put(3, franjas.get(3) + kw);
             }
         }
-        return total;
+        return franjas;
+    }
+
+    public Map<LocalDate, Double> calcularConsumoPorDia(int mes, int anio) {
+        Map<LocalDate, Double> consumoPorDia = new HashMap<>();
+        for (Consumo c : obtenerConsumosDeMes(mes, anio)) {
+            LocalDate fecha = c.getFechaHora().toLocalDate();
+            consumoPorDia.put(fecha, consumoPorDia.getOrDefault(fecha, 0.0) + c.getKwHora());
+        }
+        return consumoPorDia;
+    }
+
+    public double obtenerConsumoMinimo(int mes, int anio) {
+        return obtenerConsumosDeMes(mes, anio).stream()
+                .mapToDouble(Consumo::getKwHora)
+                .min().orElse(0.0);
+    }
+
+    public double obtenerConsumoMaximo(int mes, int anio) {
+        return obtenerConsumosDeMes(mes, anio).stream()
+                .mapToDouble(Consumo::getKwHora)
+                .max().orElse(0.0);
+    }
+
+    public double calcularValorFactura(int mes, int anio) {
+        Map<Integer, Double> franjas = calcularConsumoPorFranja(mes, anio);
+        return franjas.get(1) * 200 + franjas.get(2) * 300 + franjas.get(3) * 500;
     }
 }
+ 

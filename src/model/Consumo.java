@@ -1,22 +1,25 @@
 package model;
 
+import java.time.LocalDateTime;
+
 public class Consumo {
-    // Matriz de días (filas) x horas (columnas), cada valor es consumo en kWh
-    private double[][] datos;
+    private LocalDateTime fechaHora;
+    private double kwHora;
 
-    public Consumo(int diasDelMes) {
-        datos = new double[diasDelMes][24]; // 24 horas por día
+    public Consumo(LocalDateTime fechaHora, double kwHora) {
+        this.fechaHora = fechaHora;
+        this.kwHora = kwHora;
     }
 
-    public void setConsumo(int dia, int hora, double valor) {
-        datos[dia][hora] = valor;
+    public LocalDateTime getFechaHora() {
+        return fechaHora;
     }
 
-    public double getConsumo(int dia, int hora) {
-        return datos[dia][hora];
+    public double getKwHora() {
+        return kwHora;
     }
 
-    public double[][] getDatos() {
-        return datos;
+    public void setKwHora(double kwHora) {
+        this.kwHora = kwHora;
     }
 }
