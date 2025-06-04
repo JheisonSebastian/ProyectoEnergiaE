@@ -35,8 +35,11 @@ public class Vista {
             System.out.println("11. Mostrar promedio de consumo");
             System.out.println("12. Generar factura PDF");
             System.out.println("13. Listar clientes y registradores");
+            System.out.println("14. Mostrar consumos por registrador");
+
             System.out.println("0. Salir");
             System.out.print("Seleccione una opción: ");
+            
             opcion = scanner.nextInt();
             scanner.nextLine();  // limpiar buffer
 
@@ -54,6 +57,7 @@ public class Vista {
                 case 11 -> mostrarPromedioConsumo();
                 case 12 -> generarFacturaPDF();
                 case 13 -> listarClientesYRegistradores();
+                case 15 ->  mostrarConsumosDeRegistrador();
                 case 0 -> System.out.println("Saliendo del sistema...");
                 default -> System.out.println("Opción inválida.");
             }
@@ -237,4 +241,23 @@ public class Vista {
         scanner.nextLine();
         return new int[]{mes, anio};
     }
+//
+private void mostrarConsumosDeRegistrador() {
+    System.out.print("Ingrese ID del cliente: ");
+    String idCliente = scanner.nextLine();
+    System.out.print("Ingrese ID del registrador: ");
+    String idRegistrador = scanner.nextLine();
+
+    List<Consumo> consumos = controlador.obtenerConsumosRegistrador(idCliente, idRegistrador);
+
+    if (consumos.isEmpty()) {
+        System.out.println("No se encontraron consumos para el registrador indicado.");
+    } else {
+        System.out.println("Listado de consumos:");
+        for (Consumo c : consumos) {
+            System.out.println("Fecha y hora: " + c.getFechaHora() + " | kWh: " + String.format("%.2f", c.getKwHora()));
+        }
+    }
+}
+
 }
